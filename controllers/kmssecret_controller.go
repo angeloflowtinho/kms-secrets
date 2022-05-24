@@ -27,7 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/go-logr/logr"
-	"github.com/go-yaml/yaml"
 	"github.com/h3poteto/controller-klog/pkg/ctrklog"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -137,17 +136,28 @@ func (r *KMSSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func buildSecret(kind secretv1beta1.KMSSecret, decryptedData map[string][]byte) *corev1.Secret {
+
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            kind.Name,
 			Namespace:       kind.Namespace,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&kind, secretv1beta1.GroupVersion.WithKind("KMSSecret"))},
-			Labels:          kind.Spec.Template.GetLabels(),
-			Annotations:     kind.Spec.Template.GetAnnotations(),
+			Labels:          make(map[string]string),
+			Annotations:     make(map[string]string),
 		},
 		Data: decryptedData,
 		Type: corev1.SecretTypeOpaque,
 	}
+	for k, v := range kind.Spec.Template.Annotations {
+		secret.Annotations[k] = v
+	}
+
+	for k, v := range kind.Spec.Template.Labels {
+		secret.Labels[k] = v
+	}
+
+	secret.Labels["argocd.argoproj.io/secret-type"] = "repository"
+
 	return &secret
 }
 
@@ -168,25 +178,25 @@ func decryptData(ctx context.Context, encryptedData map[string][]byte, region st
 			return nil, err
 		}
 		plain := decrypted.Plaintext
-		value, err = yamlParse(plain)
-		if err != nil {
-			ctrklog.Warningf(ctx, "failed to yaml parse for %s, so insert plain text", key)
-			decryptedData[key] = plain
-			continue
-		}
-		decryptedData[key] = value
+		// value, err = yamlParse(plain)
+		// if err != nil {
+		// 	ctrklog.Warningf(ctx, "failed to yaml parse for %s, so insert plain text", key)
+		// 	decryptedData[key] = plain
+		// 	continue
+		// }
+		decryptedData[key] = plain
 
 	}
 	return decryptedData, nil
 }
 
-func yamlParse(input []byte) ([]byte, error) {
-	var res string
-	if err := yaml.Unmarshal(input, &res); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %w", err)
-	}
-	return []byte(res), nil
-}
+// func yamlParse(input []byte) ([]byte, error) {
+// 	var res string
+// 	if err := yaml.Unmarshal(input, &res); err != nil {
+// 		return nil, fmt.Errorf("failed to unmarshal: %w", err)
+// 	}
+// 	return []byte(res), nil
+// }
 
 func shasumData(data map[string][]byte) string {
 	keys := make([]string, 0, len(data))

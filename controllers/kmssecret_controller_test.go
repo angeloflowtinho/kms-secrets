@@ -15,32 +15,3 @@ func TestShasumData(t *testing.T) {
 		t.Errorf("shasum is not matched, expected: %s, returned: %s", expected, sum)
 	}
 }
-
-func TestYamlParse(t *testing.T) {
-	cases := []struct {
-		input    string
-		expected string
-	}{
-		{
-			input:    "--- apikey",
-			expected: "apikey",
-		},
-		{
-			input:    "apikey",
-			expected: "apikey",
-		},
-	}
-CASE:
-	for _, c := range cases {
-		input := []byte(c.input)
-		result, err := yamlParse(input)
-
-		if err != nil {
-			t.Error(err)
-			continue CASE
-		}
-		if string(result) != c.expected {
-			t.Errorf("Parsed result is not matched, expected: %s, result: %s", c.expected, result)
-		}
-	}
-}
