@@ -23,7 +23,7 @@ import (
 // SecretTemplateSpec defines the secret metadata
 type SecretTemplateSpec struct {
 	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 }
 
 // KMSSecretSpec defines the desired state of KMSSecret

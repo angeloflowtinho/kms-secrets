@@ -137,17 +137,28 @@ func (r *KMSSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func buildSecret(kind secretv1beta1.KMSSecret, decryptedData map[string][]byte) *corev1.Secret {
+
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            kind.Name,
 			Namespace:       kind.Namespace,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&kind, secretv1beta1.GroupVersion.WithKind("KMSSecret"))},
-			Labels:          kind.Spec.Template.GetLabels(),
-			Annotations:     kind.Spec.Template.GetAnnotations(),
+			Labels:          make(map[string]string),
+			Annotations:     make(map[string]string),
 		},
 		Data: decryptedData,
 		Type: corev1.SecretTypeOpaque,
 	}
+	for k, v := range kind.Spec.Template.ObjectMeta.Annotations {
+		secret.Annotations[k] = v
+	}
+
+	for k, v := range kind.Spec.Template.ObjectMeta.Labels {
+		secret.Labels[k] = v
+	}
+
+	secret.Labels["argocd.argoproj.io/secret-type"] = "repository"
+
 	return &secret
 }
 
