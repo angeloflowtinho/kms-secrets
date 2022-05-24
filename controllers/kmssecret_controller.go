@@ -149,11 +149,11 @@ func buildSecret(kind secretv1beta1.KMSSecret, decryptedData map[string][]byte) 
 		Data: decryptedData,
 		Type: corev1.SecretTypeOpaque,
 	}
-	for k, v := range kind.Spec.Template.ObjectMeta.Annotations {
+	for k, v := range kind.Spec.Template.Annotations {
 		secret.Annotations[k] = v
 	}
 
-	for k, v := range kind.Spec.Template.ObjectMeta.Labels {
+	for k, v := range kind.Spec.Template.Labels {
 		secret.Labels[k] = v
 	}
 
